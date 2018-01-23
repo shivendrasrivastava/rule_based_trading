@@ -115,6 +115,57 @@ def plot_momentum(sym_price, sym_mom, title="Momentum Indicator", fig_size=(12, 
     plt.show()
 
 
+def plot_sma_indicator(sym_price, sma_indicator, rolling_mean, 
+    title="SMA Indicator", fig_size=(12, 6)):
+    """
+    Plot simple moving average indicator, price and rolling_mean for a symbol
+
+    Parameters:
+    sym_price: Price, typically adjusted close price, series of symbol
+    sma_indicator: The simple moving average indicator
+    rolling_mean (a.k.a SMA): Rolling mean of sym_price
+    title: The chart title
+    fig_size: Width and height of the chart in inches
+
+    Returns:
+    Plot all the three series on the same plot with two scales
+    """
+
+    # Create two subplots on the same axes with different left and right scales
+    fig, ax1 = plt.subplots()
+
+    # The first subplot with the left scale: prices
+    ax1.grid(linestyle='--')
+    line1 = ax1.plot(sym_price.index, sym_price, label="Adjusted Close Price", color="b")
+    line2 = ax1.plot(rolling_mean.index, rolling_mean, label="SMA", color="g")
+    ax1.set_xlabel("Date")
+    # Make the y-axis label, ticks and tick labels match the line color
+    ax1.set_ylabel("Adjusted Close Price", color="b")
+    ax1.tick_params("y", colors="b")
+
+    # The second subplot with the right scale: momentum
+    ax2 = ax1.twinx()
+    line3 = ax2.plot(sma_indicator.index, sma_indicator, 
+        label="SMA Indicator", color="k", alpha=0.4)
+    ax2.set_ylabel("SMA indicator", color="k")
+    ax2.tick_params("y", colors="k")
+
+    # Align gridlines for the two scales
+    align_y_axis(ax1, ax2, .1, .1)
+
+    # Show legend with all labels on the same legend
+    lines = line1 + line2 + line3
+    line_labels = [l.get_label() for l in lines]
+    ax1.legend(lines, line_labels, loc="upper center")
+
+    #Set figure size
+    fig = plt.gcf()
+    fig.set_size_inches(fig_size)
+
+    plt.title(title)
+    plt.show()
+
+
 def plot_bollinger(sym_price, upper_band, lower_band, bollinger_val, 
     num_std=1, title="Bollinger Indicator", fig_size=(12, 6)):
     """
