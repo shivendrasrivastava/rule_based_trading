@@ -231,3 +231,52 @@ def align_y_axis(ax1, ax2, minresax1, minresax2):
                                ax2ylims[1] + (ax2factor -
                                (ax2ylims[1] - ax2ylims[0]) % ax2factor) %
                                ax2factor, 7))
+
+
+if __name__ == "__main__":
+    start_date = dt.datetime(2008, 1, 1)
+    end_date = dt.datetime(2009, 12, 31)
+
+    # Get NYSE trading dates
+    dates = get_exchange_days(start_date, end_date, dirpath="../data/dates_lists", 
+        filename="NYSE_dates.txt")
+
+    symbols = ["AAPL"]
+    # Get stock data and normalize it
+    df_price = get_data(symbols, dates)
+    norm_price = normalize_data(df_price)
+    window = 20
+    num_std = 2
+
+    for symbol in symbols:
+        # Compute rolling mean
+        rolling_mean = norm_price[symbol].rolling(window=window).mean()
+
+        # Compute rolling standard deviation
+        rolling_std = norm_price[symbol].rolling(window=window).std()
+
+        # Get momentum
+        momentum = get_momentum(norm_price[symbol], window)
+
+        # Plot momentum
+        plot_momentum(norm_price[symbol], momentum, 
+            "Momentum Indicator for {} with lookback={} days \
+            \n(Prices are normalized to the first date)".format(symbol, window))
+
+        # Get SMA indicator
+        sma_indicator = get_sma_indicator(norm_price[symbol], rolling_mean)
+
+        # Plot SMA indicator
+        plot_sma_indicator(norm_price[symbol], sma_indicator, rolling_mean, 
+            "SMA Indicator for {} with lookback={} days \
+            \n(Prices are normalized to the first date)".format(symbol, window))
+
+        # Compute Bollinger bands and value
+        upper_band, lower_band = get_bollinger_bands(rolling_mean, rolling_std, num_std)
+        bollinger_val = compute_bollinger_value(norm_price[symbol], rolling_mean, rolling_std)
+
+        # Plot Bollinger bands and values
+        plot_bollinger(norm_price[symbol], upper_band, lower_band, bollinger_val, num_std, 
+            "Bollinger Indicator for {} with num_std={}, lookback={} days \
+            \n(Prices are normalized to the first date)".
+            format(symbol, num_std, window))
