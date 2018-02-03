@@ -5,20 +5,20 @@ during a period. This is to give an idea of an upper bound on performance."""
 import numpy as np
 import pandas as pd
 import datetime as dt
-from util import get_exchange_days, get_data
+from util import get_data
 from marketsim import market_simulator
 
 
 class BestPossibleStrategy(object):
 
     def __init__(self):
-        """Initializes a BestPossibleStrategy"""
+        """Initialize a BestPossibleStrategy."""
         self.df_order_signals = pd.DataFrame()
         self.df_trades = pd.DataFrame()
 
 
     def trading_strategy(self, sym_price):
-        """Creates a dataframe of order signals that maximizes portfolio's return
+        """Create a dataframe of order signals that maximizes portfolio's return.
 
         Parameters:
         sym_price: The price series of a stock symbol of interest
@@ -50,7 +50,7 @@ class BestPossibleStrategy(object):
 
     def test_policy(self, symbol, start_date=dt.datetime(2008,1,1), 
         end_date=dt.datetime(2009,12,31), start_val=100000):
-        """Tests a trading policy for a stock wthin a date range and output a trades dataframe
+        """Test a trading policy for a stock wthin a date range and output a trades dataframe.
 
         Parameters:
         symbol: The stock symbol to act on
@@ -88,12 +88,50 @@ class BestPossibleStrategy(object):
 
 
     def get_order_signals(self):
-        """Get the ordder signals dataframe created by trading_strategy"""
+        """Get the ordder signals dataframe created by trading_strategy."""
         return self.df_order_signals
 
 
     def get_trades(self):
-        """Get the trades dataframe created by test_policy"""
+        """Get the trades dataframe created by test_policy."""
         return self.df_trades
 
 
+if __name__ == "__main__":
+    start_val = 100000
+    symbol = "JPM"
+
+    # In-sample or training period
+    start_d = dt.datetime(2008, 1, 1)
+    end_d = dt.datetime(2009, 12, 31)
+
+    # Get benchmark data
+    benchmark_prices = get_data([symbol], pd.date_range(start_d, end_d), 
+        addSPY=False).dropna()
+
+    # Create benchmark trades: buy 1000 shares of symbol, hold them till the last date
+    df_benchmark_trades = pd.DataFrame(
+        data=[(benchmark_prices.index.min(), symbol, "BUY", 1000), 
+        (benchmark_prices.index.max(), symbol, "SELL", 1000)], 
+        columns=["Date", "Symbol", "Order", "Shares"])
+    df_benchmark_trades.set_index("Date", inplace=True)
+
+    best_poss = BestPossibleStrategy()
+    df_trades = best_poss.test_policy(symbol=symbol, start_date=start_d, end_date=end_d)
+    
+    # Retrieve performance stats via a market simulator
+    print ("Performances during training period for {}".format(symbol))
+    print ("Date Range: {} to {}".format(start_d, end_d))
+    market_simulator(df_trades, df_benchmark_trades, start_val=start_val)
+
+
+    # Out-of-sample or testing period
+    start_d = dt.datetime(2010, 1, 1)
+    end_d = dt.datetime(2011, 12, 31)
+    best_poss = BestPossibleStrategy()
+    best_poss.test_policy(symbol=symbol, start_date=start_d, end_date=end_d)
+
+    # Retrieve performance stats via a market simulator
+    print ("\nPerformances during testing period for {}".format(symbol))
+    print ("Date Range: {} to {}".format(start_d, end_d))
+    market_simulator(df_trades, df_benchmark_trades, start_val=start_val)
