@@ -64,3 +64,51 @@ class RuleBasedStrategy(object):
         return self.df_order_signals
 
     
+    def test_policy(self, symbol, start_date=dt.datetime(2008,1,1), 
+        end_date=dt.datetime(2009,12,31), start_val=100000):
+        """Test a trading policy for a stock wthin a date range and output a trades dataframe.
+
+        Parameters:
+        symbol: The stock symbol to act on
+        start_date: A datetime object that represents the start date
+        end_date: A datetime object that represents the end date
+        start_val: Start value of the portfolio
+        
+        Returns:
+        df_trades: A dataframe whose values represent trades for each day: +1000 indicating a
+        BUY of 1000 shares, -1000 indicating a SELL of 1000 shares, and 0 indicating NOTHING
+        """
+        
+        # Get stock data
+        df_price = get_data([symbol], pd.date_range(start_date, end_date)).dropna()
+        sym_price = df_price.iloc[:, 1]
+
+        # Get order_signals using trading_strategy
+        order_signals = self.trading_strategy(sym_price)
+
+        # Remove 0 signals to make the "for" loop below run faster
+        order_signals = order_signals[order_signals!=0.0]
+
+        # Create a list of tuples of trades to be fed into a DataFrame constructor
+        trades = []
+        for date in order_signals.index:
+            if order_signals.loc[date] == 1:
+                trades.append((date, symbol, "BUY", 1000))
+            elif order_signals.loc[date] == -1:
+                trades.append((date, symbol, "SELL", 1000))
+
+        self.df_trades = pd.DataFrame(trades, columns=["Date", "Symbol", "Order", "Shares"])
+        self.df_trades.set_index("Date", inplace=True)
+
+        return self.df_trades
+
+
+    def get_order_signals(self):
+        """Get the ordder signals dataframe created by trading_strategy."""
+        return self.df_order_signals
+
+
+    def get_trades(self):
+        """Get the trades dataframe created by test_policy."""
+        return self.df_trades
+
