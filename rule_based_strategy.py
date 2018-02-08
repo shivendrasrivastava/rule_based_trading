@@ -112,3 +112,42 @@ class RuleBasedStrategy(object):
         """Get the trades dataframe created by test_policy."""
         return self.df_trades
 
+
+if __name__ == "__main__":
+    start_val = 100000
+    symbol = "JPM"
+
+    # In-sample or training period
+    start_d = dt.datetime(2008, 1, 1)
+    end_d = dt.datetime(2009, 12, 31)
+    
+    # Get benchmark data
+    benchmark_prices = get_data([symbol], pd.date_range(start_d, end_d), 
+        addSPY=False).dropna()
+
+    # Create benchmark trades: buy 1000 shares of symbol, hold them till the last date
+    df_benchmark_trades = pd.DataFrame(
+        data=[(benchmark_prices.index.min(), symbol, "BUY", 1000), 
+        (benchmark_prices.index.max(), symbol, "SELL", 1000)], 
+        columns=["Date", "Symbol", "Order", "Shares"])
+    df_benchmark_trades.set_index("Date", inplace=True)
+
+    rule_based = RuleBasedStrategy()
+    df_trades = rule_based.test_policy(symbol=symbol, start_date=start_d, end_date=end_d)
+    
+    # Retrieve performance stats via a market simulator
+    print ("Performances during training period for {}".format(symbol))
+    print ("Date Range: {} to {}".format(start_d, end_d))
+    market_simulator(df_trades, df_benchmark_trades, start_val=start_val)
+
+
+    # Out-of-sample or testing period
+    start_d = dt.datetime(2010, 1, 1)
+    end_d = dt.datetime(2011, 12, 31)
+    rule_based = RuleBasedStrategy()
+    rule_based.test_policy(symbol=symbol, start_date=start_d, end_date=end_d)
+    
+    # Retrieve performance stats via a market simulator
+    print ("\nPerformances during testing period for {}".format(symbol))
+    print ("Date Range: {} to {}".format(start_d, end_d))
+    market_simulator(df_trades, df_benchmark_trades, start_val=start_val)
